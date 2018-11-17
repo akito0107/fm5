@@ -14,6 +14,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:86d119ee8a0fb122f2d0e0fbbbd5d2f65953029248743462ee3908a21ae04247"
+  name = "github.com/andreyvit/diff"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "c7f18ee00883bfd3b00e0a2bf7607827e0148ad4"
+
+[[projects]]
+  branch = "master"
   digest = "1:89cd2208bdeb192cc83ee287216af3c987fc87a90b9087718ad6631b636cefcf"
   name = "github.com/iancoleman/strcase"
   packages = ["."]
@@ -66,6 +74,14 @@
   version = "v0.8.0"
 
 [[projects]]
+  digest = "1:d917313f309bda80d27274d53985bc65651f81a5b66b820749ac7f8ef061fd04"
+  name = "github.com/sergi/go-diff"
+  packages = ["diffmatchpatch"]
+  pruneopts = "UT"
+  revision = "1744e2970ca51c86172c8190fadad617561ed6e7"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:b24d38b282bacf9791408a080f606370efa3d364e4b5fd9ba0f7b87786d3b679"
   name = "github.com/urfave/cli"
   packages = ["."]
@@ -115,8 +131,11 @@
   analyzer-version = 1
   input-imports = [
     "github.com/akito0107/generr/cmd/generr",
+    "github.com/andreyvit/diff",
+    "github.com/iancoleman/strcase",
     "github.com/kyoh86/richgo",
     "github.com/pkg/errors",
+    "golang.org/x/tools/imports",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
