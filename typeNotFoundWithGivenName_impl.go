@@ -3,19 +3,22 @@ package fmgo
 
 import "fmt"
 
-func IsTypeNotFoundWithGivenName(err error) bool {
-	if _, ok := err.(typeNotFoundWithGivenName); ok {
-		return true
+func IsTypeNotFoundWithGivenName(err error) (bool, string) {
+	var name string
+	if e, ok := err.(typeNotFoundWithGivenName); ok {
+		name = e.TypeNotFoundWithGivenName()
+		return true, name
 	}
-	return false
+	return false, name
 }
 
 type TypeNotFoundWithGivenName struct {
+	Name string
 }
 
-func (e *TypeNotFoundWithGivenName) TypeNotFoundWithGivenName() {
-	return
+func (e *TypeNotFoundWithGivenName) TypeNotFoundWithGivenName() string {
+	return e.Name
 }
 func (e *TypeNotFoundWithGivenName) Error() string {
-	return fmt.Sprint("typeNotFoundWithGivenName")
+	return fmt.Sprintf("typeNotFoundWithGivenName Name: %v", e.Name)
 }

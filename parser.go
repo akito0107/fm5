@@ -12,7 +12,7 @@ import (
 
 //go:generate ./bin/generr -t typeNotFoundWithGivenName -i
 type typeNotFoundWithGivenName interface {
-	TypeNotFoundWithGivenName(typename string)
+	TypeNotFoundWithGivenName() (name string)
 }
 
 func Parse(r io.Reader, typename string) (string, *ast.TypeSpec, error) {
@@ -31,14 +31,14 @@ func Parse(r io.Reader, typename string) (string, *ast.TypeSpec, error) {
 		switch x := n.(type) {
 		case *ast.File:
 			pkgName = x.Name.Name
-		// case *ast.TypeSpec:
-		// 	if _, ok := x.Type.(*ast.InterfaceType); !ok {
-		// 		return true
-		// 	}
-		// 	if x.Name.Name == tp {
-		// 		ts = x
-		// 		return false
-		// 	}
+		case *ast.TypeSpec:
+			if _, ok := x.Type.(*ast.StructType); !ok {
+				return true
+			}
+			if x.Name.Name == typename {
+				ts = x
+				return false
+			}
 		default:
 			return true
 		}
@@ -46,7 +46,7 @@ func Parse(r io.Reader, typename string) (string, *ast.TypeSpec, error) {
 	})
 
 	if ts == nil {
-		return "", nil, &TypeNotFoundWithGivenName{}
+		return "", nil, &TypeNotFoundWithGivenName{Name: typename}
 	}
 
 	return pkgName, ts, nil
