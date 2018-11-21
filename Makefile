@@ -1,6 +1,6 @@
 .PHONY: build
 build: tools gen
-	go build -o bin/fmgo cmd/fmgo/main.go
+	go build -o bin/fm5 cmd/fm5/main.go
 
 .PHONY: gen
 gen:
