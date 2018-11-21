@@ -1,4 +1,4 @@
-package fmgo
+package fm5
 
 import (
 	"testing"
@@ -23,7 +23,7 @@ func TestGenerator_AppendPackage(t *testing.T) {
 	}
 }
 
-func TestGenerator_AppendCheckFunction(t *testing.T) {
+func TestGenerator_AppendDefaultFactory(t *testing.T) {
 
 	helper := func(t *testing.T, methodname, typename, src, exp string) {
 		t.Helper()
@@ -57,56 +57,45 @@ func NewA() *A {
 `
 		helper(t, "NewA", "A", src, exp)
 	})
-	//
-	// 	t.Run("return int value", func(t *testing.T) {
-	// 		src := `package main
-	//
-	// type userNotFound interface {
-	// 	UserNotFound() (id int64)
-	// }
-	// `
-	//
-	// 		exp := `package main
-	//
-	// func IsUserNotFound(err error) (bool, int64) {
-	// 	var id int64
-	// 	if e, ok := err.(userNotFound); ok {
-	// 		id = e.UserNotFound()
-	// 		return true, id
-	// 	}
-	// 	return false, id
-	// }
-	// `
-	// 		helper(t, src, "userNotFound", exp)
-	// 	})
-	//
-	// 	t.Run("return multi value value", func(t *testing.T) {
-	// 		src := `package main
-	//
-	// type userNotFound interface {
-	// 	UserNotFound() (id int64, name string)
-	// }
-	// `
-	//
-	// 		exp := `package main
-	//
-	// func IsUserNotFound(err error) (bool, int64, string) {
-	// 	var id int64
-	// 	var name string
-	// 	if e, ok := err.(userNotFound); ok {
-	// id, name = e.UserNotFound()
-	// return true, id, name
-	//}
-	// return false, id, name
-	// }
-	// `
-	//helper(t, src, "userNotFound", exp)
-	//})
+
+	t.Run("has int member", func(t *testing.T) {
+		src := `package main
+
+			type A struct {
+				id int
+			}`
+
+		exp := `package main
+
+func NewA(id int) *A {
+	return &A{id: id}
+}
+`
+
+		helper(t, "NewA", "A", src, exp)
+	})
+
+	t.Run("return multi value value", func(t *testing.T) {
+		src := `package main
+
+			type A struct {
+				id int
+				name string
+			}`
+
+		exp := `package main
+
+func NewA(id int, name string) *A {
+	return &A{id: id, name: name}
+}
+`
+		helper(t, "NewA", "A", src, exp)
+	})
 }
 
-func TestGenerator_AppendErrorImplementation(t *testing.T) {
+func TestGenerator_AppendFunctionalOptionType(t *testing.T) {
 
-	helper := func(t *testing.T, src, typename, exp string, msg string) {
+	helper := func(t *testing.T, typename, methodname, src, exp string) {
 		t.Helper()
 		n, s, err := Parse(bytes.NewBufferString(src), typename)
 		if err != nil {
@@ -114,7 +103,7 @@ func TestGenerator_AppendErrorImplementation(t *testing.T) {
 		}
 		g := NewGenerator(n, typename, s)
 		g.AppendPackage()
-		if err := g.AppendErrorImplementation(msg); err != nil {
+		if err := g.AppendFunctionalOptionType(methodname); err != nil {
 			t.Fatal(err)
 		}
 		var buf bytes.Buffer
@@ -124,100 +113,24 @@ func TestGenerator_AppendErrorImplementation(t *testing.T) {
 		}
 	}
 
-	t.Run("return no value", func(t *testing.T) {
+	t.Run("has no member", func(t *testing.T) {
 		src := `package main
-
-type userNotFound interface {
-	UserNotFound()
-}
-`
-		exp := `package main
-
-type UserNotFound struct {
-}
-
-func (e *UserNotFound) UserNotFound() {
-	return
-}
-func (e *UserNotFound) Error() string {
-	return fmt.Sprint("userNotFound")
-}
-`
-		helper(t, src, "userNotFound", exp, "")
-	})
-
-	t.Run("return int value", func(t *testing.T) {
-		src := `package main
-
-type userNotFound interface {
-	UserNotFound() (id int64)
-}
+type A struct {}
 `
 
 		exp := `package main
 
-type UserNotFound struct {
-	Id int64
-}
+type AOption func(*A)
 
-func (e *UserNotFound) UserNotFound() int64 {
-	return e.Id
-}
-func (e *UserNotFound) Error() string {
-	return fmt.Sprintf("userNotFound Id: %v", e.Id)
-}
-`
-		helper(t, src, "userNotFound", exp, "")
-	})
+func AWithOptions(opts ...AOption) *A {
+	i := &A{}
+	for _, o := range opts {
+		o(i)
+	}
 
-	t.Run("return multiple value", func(t *testing.T) {
-		src := `package main
-
-type userNotFound interface {
-	UserNotFound() (id int64, name string)
+	return i
 }
 `
-
-		exp := `package main
-
-type UserNotFound struct {
-	Id   int64
-	Name string
-}
-
-func (e *UserNotFound) UserNotFound() (int64, string) {
-	return e.Id, e.Name
-}
-func (e *UserNotFound) Error() string {
-	return fmt.Sprintf("userNotFound Id: %v Name: %v", e.Id, e.Name)
-}
-`
-		helper(t, src, "userNotFound", exp, "")
-	})
-
-	t.Run("return multiple value with custom message", func(t *testing.T) {
-		src := `package main
-
-type userNotFound interface {
-	UserNotFound() (id int64, name string)
-}
-`
-
-		exp := `package main
-
-type UserNotFound struct {
-	Id   int64
-	Name string
-}
-
-func (e *UserNotFound) UserNotFound() (int64, string) {
-	return e.Id, e.Name
-}
-func (e *UserNotFound) Error() string {
-	return fmt.Sprintf("custom message with %d and %s", e.Id, e.Name)
-}
-`
-		msg := "custom message with %d and %s"
-		helper(t, src, "userNotFound", exp, msg)
+		helper(t, "A", "AWithOptions", src, exp)
 	})
 }

@@ -1,4 +1,4 @@
-package fmgo
+package fm5
 
 import (
 	"bytes"

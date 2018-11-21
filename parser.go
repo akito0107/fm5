@@ -1,4 +1,4 @@
-package fmgo
+package fm5
 
 import (
 	"go/ast"
@@ -6,8 +6,6 @@ import (
 	"go/token"
 	"io"
 	"io/ioutil"
-
-	"github.com/k0kubun/pp"
 
 	"github.com/pkg/errors"
 )
@@ -23,7 +21,7 @@ func Parse(r io.Reader, typename string) (string, *ast.TypeSpec, error) {
 		return "", nil, errors.Wrap(err, "parse file readAll failed")
 	}
 	f, err := parser.ParseFile(token.NewFileSet(), "", string(src), parser.ParseComments)
-	pp.Print(f)
+	// pp.Print(f)
 	if err != nil {
 		return "", nil, errors.Wrap(err, "parse file with filename is failed")
 	}
