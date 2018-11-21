@@ -80,7 +80,7 @@ func run(ctx *cli.Context) error {
 	}
 
 	for _, f := range filenames {
-		ok, err := generate(f, typename, fmname, fm, fo, dryrun)
+		ok, err := generate(f, typename, fmname, fmoname, fm, fo, dryrun)
 		if err != nil {
 			return err
 		}
@@ -92,14 +92,16 @@ func run(ctx *cli.Context) error {
 	return errors.Errorf("typename %s is not found", typename)
 }
 
-func generate(filename, typename, fmn string, fm, fo, dryrun bool) (bool, error) {
+func generate(filename, typename, fmn, fmon string, fm, fo, dryrun bool) (bool, error) {
 	r, err := os.Open(filename)
 	if err != nil {
 		return false, err
 	}
 	defer r.Close()
 	pkgName, ts, err := fm5.Parse(r, typename)
-	if err != nil {
+	if ok, _ := fm5.IsTypeNotFoundWithGivenName(err); ok {
+		return false, nil
+	} else if err != nil {
 		return false, err
 	}
 	g := fm5.NewGenerator(pkgName, typename, ts)
@@ -111,7 +113,7 @@ func generate(filename, typename, fmn string, fm, fo, dryrun bool) (bool, error)
 	}
 
 	if fo {
-		if err := g.AppendFunctionalOptionType(fmn); err != nil {
+		if err := g.AppendFunctionalOptionType(fmon); err != nil {
 			return false, err
 		}
 		if err := g.AppendFunctionalOptions(); err != nil {

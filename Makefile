@@ -7,7 +7,7 @@ gen:
 	go generate ./...
 
 clean:
-	rm bin/* e2e/unienv
+	rm bin/* e2e/fm5 e2e/*_fm.go
 
 tools: bin/generr bin/richgo
 
@@ -24,16 +24,16 @@ vendor:
 	dep ensure
 
 .PHONY: test
-test: test/small
+test: test/small test/e2e
 
 .PHONY: test/small
 test/small: tools
-	bin/richgo test -v -cover
+	bin/richgo test -v -cover -count=1
 
 
 .PHONY: test/e2e
-test/e2e: e2e/unienv tools
-	cd e2e; ../bin/richgo test -v .
+test/e2e: e2e/fm5 tools
+	cd e2e; ../bin/richgo test -count=1 -v .
 
-e2e/unienv:
-	go build -o e2e/unienv cmd/unienv/main.go
+e2e/fm5:
+	go build -o e2e/fm5 cmd/fm5/main.go

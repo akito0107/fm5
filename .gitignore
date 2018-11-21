@@ -22,3 +22,4 @@
 
 # End of https://www.gitignore.io/api/go
 bin
+e2e/fm5
