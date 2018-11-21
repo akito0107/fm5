@@ -25,7 +25,7 @@ func TestGenerator_AppendPackage(t *testing.T) {
 
 func TestGenerator_AppendDefaultFactory(t *testing.T) {
 
-	helper := func(t *testing.T, methodname, typename, src, exp string) {
+	helper := func(t *testing.T, methodname, typename, outputtypename, src, exp string) {
 		t.Helper()
 		n, s, err := Parse(bytes.NewBufferString(src), typename)
 		if err != nil {
@@ -33,7 +33,7 @@ func TestGenerator_AppendDefaultFactory(t *testing.T) {
 		}
 		g := NewGenerator(n, typename, s)
 		g.AppendPackage()
-		if err := g.AppendDefaultFactory(methodname); err != nil {
+		if err := g.AppendDefaultFactory(methodname, outputtypename); err != nil {
 			t.Fatal(err)
 		}
 		var buf bytes.Buffer
@@ -55,7 +55,7 @@ func NewA() *A {
 	return &A{}
 }
 `
-		helper(t, "NewA", "A", src, exp)
+		helper(t, "NewA", "A", "", src, exp)
 	})
 
 	t.Run("has int member", func(t *testing.T) {
@@ -72,7 +72,7 @@ func NewA(id int) *A {
 }
 `
 
-		helper(t, "NewA", "A", src, exp)
+		helper(t, "NewA", "A", "", src, exp)
 	})
 
 	t.Run("return multi value value", func(t *testing.T) {
@@ -89,13 +89,30 @@ func NewA(id int, name string) *A {
 	return &A{id: id, name: name}
 }
 `
-		helper(t, "NewA", "A", src, exp)
+		helper(t, "NewA", "A", "", src, exp)
+	})
+
+	t.Run("with output typename", func(t *testing.T) {
+		src := `package main
+
+			type A struct {
+				id int
+				name string
+			}`
+
+		exp := `package main
+
+func NewA(id int, name string) IA {
+	return &A{id: id, name: name}
+}
+`
+		helper(t, "NewA", "A", "IA", src, exp)
 	})
 }
 
 func TestGenerator_AppendFunctionalOptionType(t *testing.T) {
 
-	helper := func(t *testing.T, typename, methodname, src, exp string) {
+	helper := func(t *testing.T, typename, methodname, outputtypename, src, exp string) {
 		t.Helper()
 		n, s, err := Parse(bytes.NewBufferString(src), typename)
 		if err != nil {
@@ -103,7 +120,7 @@ func TestGenerator_AppendFunctionalOptionType(t *testing.T) {
 		}
 		g := NewGenerator(n, typename, s)
 		g.AppendPackage()
-		if err := g.AppendFunctionalOptionType(methodname); err != nil {
+		if err := g.AppendFunctionalOptionType(methodname, outputtypename); err != nil {
 			t.Fatal(err)
 		}
 		var buf bytes.Buffer
@@ -130,7 +147,27 @@ func AWithOptions(opts ...AOption) *A {
 	return i
 }
 `
-		helper(t, "A", "AWithOptions", src, exp)
+		helper(t, "A", "AWithOptions", "", src, exp)
+	})
+
+	t.Run("with custom typename", func(t *testing.T) {
+		src := `package main
+type A struct {}
+`
+
+		exp := `package main
+
+type AOption func(*A)
+
+func AWithOptions(opts ...AOption) IA {
+	i := &A{}
+	for _, o := range opts {
+		o(i)
+	}
+	return i
+}
+`
+		helper(t, "A", "AWithOptions", "IA", src, exp)
 	})
 }
 

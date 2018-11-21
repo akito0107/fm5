@@ -43,6 +43,10 @@ func main() {
 			Name:  "functional-option-name, fon",
 			Usage: "functional option method name(New + $typename + Options)",
 		},
+		cli.StringFlag{
+			Name:  "return-typename, r",
+			Usage: "return typename (if present, applied this type, otherwise, using pointer type of given type)",
+		},
 	}
 
 	if err := app.Run(os.Args); err != nil {
@@ -55,6 +59,7 @@ func run(ctx *cli.Context) error {
 	dryrun := ctx.Bool("dryrun")
 	fm := ctx.Bool("factory-method")
 	fo := ctx.Bool("functional-option")
+	o := ctx.String("return-typename")
 	if typename == "" {
 		return errors.New("type is required")
 	}
@@ -80,7 +85,7 @@ func run(ctx *cli.Context) error {
 	}
 
 	for _, f := range filenames {
-		ok, err := generate(f, typename, fmname, fmoname, fm, fo, dryrun)
+		ok, err := generate(f, typename, fmname, fmoname, o, fm, fo, dryrun)
 		if err != nil {
 			return err
 		}
@@ -92,7 +97,7 @@ func run(ctx *cli.Context) error {
 	return errors.Errorf("typename %s is not found", typename)
 }
 
-func generate(filename, typename, fmn, fmon string, fm, fo, dryrun bool) (bool, error) {
+func generate(filename, typename, fmn, fmon, outtype string, fm, fo, dryrun bool) (bool, error) {
 	r, err := os.Open(filename)
 	if err != nil {
 		return false, err
@@ -107,13 +112,13 @@ func generate(filename, typename, fmn, fmon string, fm, fo, dryrun bool) (bool, 
 	g := fm5.NewGenerator(pkgName, typename, ts)
 	g.AppendPackage()
 	if fm {
-		if err := g.AppendDefaultFactory(fmn); err != nil {
+		if err := g.AppendDefaultFactory(fmn, outtype); err != nil {
 			return false, err
 		}
 	}
 
 	if fo {
-		if err := g.AppendFunctionalOptionType(fmon); err != nil {
+		if err := g.AppendFunctionalOptionType(fmon, outtype); err != nil {
 			return false, err
 		}
 		if err := g.AppendFunctionalOptions(); err != nil {

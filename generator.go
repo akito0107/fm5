@@ -39,8 +39,8 @@ func (g *Generator) AppendPackage() {
 	}
 }
 
-func (g *Generator) AppendDefaultFactory(methodname string) error {
-	d, err := appendDefaultFactory(g.ts, g.typeName, methodname)
+func (g *Generator) AppendDefaultFactory(methodname, outputtypename string) error {
+	d, err := appendDefaultFactory(g.ts, g.typeName, methodname, outputtypename)
 	if err != nil {
 		return err
 	}
@@ -48,8 +48,8 @@ func (g *Generator) AppendDefaultFactory(methodname string) error {
 	return nil
 }
 
-func (g *Generator) AppendFunctionalOptionType(methodname string) error {
-	d, err := appendFunctionalOptionType(g.typeName, methodname)
+func (g *Generator) AppendFunctionalOptionType(methodname, outputtypename string) error {
+	d, err := appendFunctionalOptionType(g.typeName, methodname, outputtypename)
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ type notStructType interface {
 	NotStructType() (typename string)
 }
 
-func appendDefaultFactory(ts *ast.TypeSpec, typeName, methodName string) ([]ast.Decl, error) {
+func appendDefaultFactory(ts *ast.TypeSpec, typeName, methodName, outtypename string) ([]ast.Decl, error) {
 	st, ok := ts.Type.(*ast.StructType)
 	if !ok {
 		return nil, &NotStructType{Typename: fmt.Sprintf("%v", ts.Type)}
@@ -107,6 +107,12 @@ func appendDefaultFactory(ts *ast.TypeSpec, typeName, methodName string) ([]ast.
 			},
 		},
 	}
+	var retType ast.Expr = &ast.StarExpr{
+		X: ast.NewIdent(typeName),
+	}
+	if outtypename != "" {
+		retType = ast.NewIdent(outtypename)
+	}
 
 	decls := []ast.Decl{
 		&ast.FuncDecl{
@@ -116,9 +122,7 @@ func appendDefaultFactory(ts *ast.TypeSpec, typeName, methodName string) ([]ast.
 				Results: &ast.FieldList{
 					List: []*ast.Field{
 						{
-							Type: &ast.StarExpr{
-								X: ast.NewIdent(typeName),
-							},
+							Type: retType,
 						},
 					},
 				},
@@ -132,7 +136,8 @@ func appendDefaultFactory(ts *ast.TypeSpec, typeName, methodName string) ([]ast.
 	return decls, nil
 }
 
-func appendFunctionalOptionType(typename, methodname string) ([]ast.Decl, error) {
+func appendFunctionalOptionType(typename, methodname, outtypename string) ([]ast.Decl, error) {
+
 	optDef := &ast.GenDecl{
 		Tok: token.TYPE,
 		Specs: []ast.Spec{
@@ -206,15 +211,19 @@ func appendFunctionalOptionType(typename, methodname string) ([]ast.Decl, error)
 			},
 		},
 	}
+	var retType ast.Expr = &ast.StarExpr{
+		X: ast.NewIdent(typename),
+	}
+	if outtypename != "" {
+		retType = ast.NewIdent(outtypename)
+	}
 
 	fDecl := &ast.FuncDecl{
 		Name: ast.NewIdent(methodname),
 		Type: &ast.FuncType{Params: params, Results: &ast.FieldList{
 			List: []*ast.Field{
 				{
-					Type: &ast.StarExpr{
-						X: ast.NewIdent(typename),
-					},
+					Type: retType,
 				},
 			},
 		}},
