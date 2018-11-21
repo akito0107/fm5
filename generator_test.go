@@ -127,10 +127,71 @@ func AWithOptions(opts ...AOption) *A {
 	for _, o := range opts {
 		o(i)
 	}
-
 	return i
 }
 `
 		helper(t, "A", "AWithOptions", src, exp)
+	})
+}
+
+func TestGenerator_AppendFunctionalOptionFuncs(t *testing.T) {
+
+	helper := func(t *testing.T, typename, methodname, src, exp string) {
+		t.Helper()
+		n, s, err := Parse(bytes.NewBufferString(src), typename)
+		if err != nil {
+			t.Fatal(err)
+		}
+		g := NewGenerator(n, typename, s)
+		g.AppendPackage()
+		if err := g.AppendFunctionalOptions(); err != nil {
+			t.Fatal(err)
+		}
+		var buf bytes.Buffer
+		format.Node(&buf, token.NewFileSet(), g.f)
+		if act := buf.String(); act != exp {
+			t.Error(diff.LineDiff(exp, act))
+		}
+	}
+
+	t.Run("has single member", func(t *testing.T) {
+		src := `package main
+			type A struct {
+				id int
+			}
+			`
+		exp := `package main
+
+func WithId(id int) AOption {
+	return func(i *A) {
+		i.id = id
+	}
+}
+`
+		helper(t, "A", "AWithOptions", src, exp)
+	})
+
+	t.Run("has multi member", func(t *testing.T) {
+		src := `package main
+			type A struct {
+				repoA repositoryX.ARepo
+				repoB repositoryX.BRepo
+			}
+			`
+		exp := `package main
+
+func WithRepoA(repoA repositoryX.ARepo) AOption {
+	return func(i *A) {
+		i.repoA = repoA
+	}
+}
+func WithRepoB(repoB repositoryX.BRepo) AOption {
+	return func(i *A) {
+		i.repoB = repoB
+	}
+}
+`
+		helper(t, "A", "AWithOptions", src, exp)
+
 	})
 }

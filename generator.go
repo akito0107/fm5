@@ -7,6 +7,7 @@ import (
 	"go/format"
 	"go/token"
 	"io"
+	"strings"
 
 	"golang.org/x/tools/imports"
 )
@@ -49,6 +50,15 @@ func (g *Generator) AppendDefaultFactory(methodname string) error {
 
 func (g *Generator) AppendFunctionalOptionType(methodname string) error {
 	d, err := appendFunctionalOptionType(g.typeName, methodname)
+	if err != nil {
+		return err
+	}
+	g.f.Decls = append(g.f.Decls, d...)
+	return nil
+}
+
+func (g *Generator) AppendFunctionalOptions() error {
+	d, err := appendFunctionalOptions(g.ts, g.typeName)
 	if err != nil {
 		return err
 	}
@@ -145,17 +155,6 @@ func appendFunctionalOptionType(typename, methodname string) ([]ast.Decl, error)
 		},
 	}
 
-	ret := &ast.ReturnStmt{
-		Results: []ast.Expr{
-			&ast.UnaryExpr{
-				Op: token.AND,
-				X: &ast.CompositeLit{
-					Type: ast.NewIdent(typename),
-				},
-			},
-		},
-	}
-
 	params := &ast.FieldList{
 		List: []*ast.Field{
 			{
@@ -166,18 +165,136 @@ func appendFunctionalOptionType(typename, methodname string) ([]ast.Decl, error)
 			},
 		},
 	}
+	fBody := &ast.BlockStmt{
+		List: []ast.Stmt{
+			&ast.AssignStmt{
+				Lhs: []ast.Expr{
+					ast.NewIdent("i"),
+				},
+				Tok: token.DEFINE,
+				Rhs: []ast.Expr{
+					&ast.UnaryExpr{
+						Op: token.AND,
+						X: &ast.CompositeLit{
+							Type: ast.NewIdent(typename),
+						},
+					},
+				},
+			},
+			&ast.RangeStmt{
+				X:     ast.NewIdent("opts"),
+				Key:   ast.NewIdent("_"),
+				Value: ast.NewIdent("o"),
+				Tok:   token.DEFINE,
+				Body: &ast.BlockStmt{
+					List: []ast.Stmt{
+						&ast.ExprStmt{
+							X: &ast.CallExpr{
+								Fun: ast.NewIdent("o"),
+								Args: []ast.Expr{
+									ast.NewIdent("i"),
+								},
+							},
+						},
+					},
+				},
+			},
+			&ast.ReturnStmt{
+				Results: []ast.Expr{
+					ast.NewIdent("i"),
+				},
+			},
+		},
+	}
 
 	fDecl := &ast.FuncDecl{
 		Name: ast.NewIdent(methodname),
-		Type: &ast.FuncType{Params: params},
-		Body: &ast.BlockStmt{
-			List: []ast.Stmt{ret},
-		},
+		Type: &ast.FuncType{Params: params, Results: &ast.FieldList{
+			List: []*ast.Field{
+				{
+					Type: &ast.StarExpr{
+						X: ast.NewIdent(typename),
+					},
+				},
+			},
+		}},
+		Body: fBody,
 	}
 
 	res := []ast.Decl{
 		optDef,
 		fDecl,
+	}
+
+	return res, nil
+}
+
+func appendFunctionalOptions(ts *ast.TypeSpec, typename string) ([]ast.Decl, error) {
+	st, ok := ts.Type.(*ast.StructType)
+	if !ok {
+		return nil, &NotStructType{Typename: fmt.Sprintf("%v", ts.Type)}
+	}
+
+	var res []ast.Decl
+	for _, f := range st.Fields.List {
+		name := f.Names[0].Name
+		fdecl := &ast.FuncDecl{
+			Name: ast.NewIdent("With" + strings.Title(name)),
+			Type: &ast.FuncType{
+				Params: &ast.FieldList{
+					List: []*ast.Field{
+						f,
+					},
+				},
+				Results: &ast.FieldList{
+					List: []*ast.Field{
+						{
+							Type: ast.NewIdent(typename + "Option"),
+						},
+					},
+				},
+			},
+			Body: &ast.BlockStmt{
+				List: []ast.Stmt{
+					&ast.ReturnStmt{
+						Results: []ast.Expr{
+							&ast.FuncLit{
+								Type: &ast.FuncType{
+									Params: &ast.FieldList{
+										List: []*ast.Field{
+											{
+												Names: []*ast.Ident{
+													ast.NewIdent("i"),
+												},
+												Type: &ast.StarExpr{
+													X: ast.NewIdent(typename),
+												},
+											},
+										},
+									},
+									Results: nil,
+								},
+								Body: &ast.BlockStmt{
+									List: []ast.Stmt{
+										&ast.AssignStmt{
+											Lhs: []ast.Expr{
+												&ast.SelectorExpr{
+													X:   ast.NewIdent("i"),
+													Sel: ast.NewIdent(name),
+												},
+											},
+											Tok: token.ASSIGN,
+											Rhs: []ast.Expr{ast.NewIdent(name)},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		res = append(res, fdecl)
 	}
 
 	return res, nil

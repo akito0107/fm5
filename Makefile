@@ -24,7 +24,7 @@ vendor:
 	dep ensure
 
 .PHONY: test
-test: test/small test/e2e
+test: test/small
 
 .PHONY: test/small
 test/small: tools
