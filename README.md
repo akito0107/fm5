@@ -113,10 +113,10 @@ func WithName(name string) StructureOption {
 ```sh
 $ fm5 --help
 NAME:
-   generr - generate custom error from interface
+   fm5 - factory method generator
 
 USAGE:
-   generr [OPTIONS]
+   fm5 [OPTIONS]
 
 VERSION:
    0.0.0
