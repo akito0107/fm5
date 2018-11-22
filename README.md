@@ -1,4 +1,4 @@
-# generr
+# fm5
 
 generate factory method utilities for golang.
 
