@@ -114,3 +114,10 @@ func WithName(name string) SimpleStructOption {
 		})
 	}
 }
+
+func TestGenerated(t *testing.T) {
+	s := NewSimpleStructOptions(WithId("ID"), WithName("Test"))
+	if s.Run() != "Test" {
+		t.Errorf("must be Test but %s", s.Run())
+	}
+}
