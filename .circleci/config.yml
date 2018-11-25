@@ -1,0 +1,27 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:latest
+    working_directory: /go/src/github.com/akito0107/fm5
+
+    environment:
+      DEP_VERSION: 0.5.0
+      CC_TEST_REPORTER_ID: 1587824b4f5e01aef0efeb7839d87d3cc05a5146b104bff3aa855e937cf5d13c
+
+    steps:
+      - checkout
+      - run: curl -L -s https://github.com/golang/dep/releases/download/v${DEP_VERSION}/dep-linux-amd64 -o $GOPATH/bin/dep && chmod +x $GOPATH/bin/dep
+      - run:
+          name: build
+          command: make      
+      - run:
+          name: Setup Code Climate test-reporter
+          command: |
+            curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+            chmod +x ./cc-test-reporter
+      - run: ./cc-test-reporter before-build
+      - run: make test/small
+      - run: ./cc-test-reporter format-coverage --input-type gocov out
+      - run: ./cc-test-reporter upload-coverage
+      - run: make test/e2e
