@@ -28,8 +28,7 @@ test: test/small test/e2e
 
 .PHONY: test/small
 test/small: tools
-	bin/richgo test -v -cover -count=1
-
+	bin/richgo test -v -coverprofile=out -count=1
 
 .PHONY: test/e2e
 test/e2e: e2e/fm5 tools
